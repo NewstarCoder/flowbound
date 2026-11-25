@@ -7,7 +7,7 @@ import path from 'node:path';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 mkdirSync(path.join(here, 'shots'), { recursive: true });
-const pageUrl = pathToFileURL(path.join(here, '..', 'index.html')).href;
+const pageUrl = process.env.URL || pathToFileURL(path.join(here, '..', 'index.html')).href;
 const edge = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe'].find(existsSync);
 const port = 9335;
 const proc = spawn(edge, ['--headless=new', `--remote-debugging-port=${port}`, `--window-size=${process.env.W || 1400},${process.env.H || 850}`, `--user-data-dir=${path.join(here, '.edge-probe')}`, pageUrl]);
@@ -34,7 +34,7 @@ const evalJs = async (expr) => {
   return r.result.result.value;
 };
 await send('Runtime.enable');
-await sleep(1200);
+await sleep(Number(process.env.WAIT || 1200));
 await evalJs(`(async () => { localStorage.clear(); const $ = (i) => document.getElementById(i), s = (ms) => new Promise(r => setTimeout(r, ms));
   $('inName').value = 'probe'; $('inPin').value = '1111'; $('btnLogin').click(); await s(300);
   $('btnNew').click(); await s(200); document.querySelectorAll('.class-card')[2].click(); $('btnBegin').click(); await s(150); $('modalYes').click(); await s(700); })()`);
