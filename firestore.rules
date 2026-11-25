@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /players/{id} {
+      allow read: if true;
+      allow create: if valid() && id == request.resource.data.name.lower();
+      allow update: if valid()
+        && request.resource.data.pinHash == resource.data.pinHash
+        && request.resource.data.name.lower() == resource.data.name.lower()
+        && request.resource.data.xp >= resource.data.xp;
+      allow delete: if false;
+
+      function valid() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['name', 'pinHash', 'xp', 'answered', 'correct', 'bosses', 'best', 'draws', 'updated'])
+          && d.name is string && d.name.matches('^[A-Za-z0-9_]{3,16}$')
+          && d.pinHash is string && d.pinHash.size() == 28
+          && d.xp is int && d.xp >= 0 && d.xp < 1000000
+          && d.answered is int && d.correct is int && d.correct <= d.answered
+          && d.bosses is int && d.best is int && d.best <= 3 && d.draws is int;
+      }
+    }
+  }
+}

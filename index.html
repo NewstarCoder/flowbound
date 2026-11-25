@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Flowbound — a flowchart RPG</title>
+  <meta name="description" content="Defeat bosses by reading, tracing, completing and drawing flowcharts. IGCSE Computer Science practice game.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230b0b0d'/%3E%3Cpolygon points='16,4 28,16 16,28 4,16' fill='none' stroke='%2322b8a6' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main id="app">
+
+    <section id="title" class="screen active">
+      <h1>FLOWBOUND</h1>
+      <p class="sub">An IGCSE flowchart RPG</p>
+
+      <form id="loginForm" class="card" autocomplete="off">
+        <div id="loginBox">
+          <h3>Sign in to play</h3>
+          <p class="small">New here? Pick a username and a 4-digit PIN — your account is created automatically. Use the same PIN next time.</p>
+          <label>Username <input id="inName" maxlength="16" placeholder="e.g. bat_erdene" autocapitalize="off" spellcheck="false"></label>
+          <label>PIN <input id="inPin" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" placeholder="4 digits"></label>
+          <div id="loginErr" class="err"></div>
+          <div class="menu row">
+            <button id="btnLogin" class="btn primary" type="submit">Play</button>
+            <button id="btnBoard2" class="btn" type="button">Leaderboard</button>
+          </div>
+        </div>
+      </form>
+
+      <div id="playerBox" class="card" hidden>
+        <div class="who"><span id="whoName"></span><button id="btnLogout" class="btn tiny" type="button">Switch user</button></div>
+        <div id="whoTier" class="tierbox"></div>
+        <div class="menu">
+          <button id="btnContinue" class="btn primary" hidden>Continue</button>
+          <button id="btnNew" class="btn primary">New Game</button>
+          <button id="btnBoard" class="btn">Leaderboard</button>
+          <button id="btnFull" class="btn">Fullscreen</button>
+        </div>
+      </div>
+      <p class="small">Answer flowchart questions to strike. Answer wrongly and the boss strikes you.<br>Drawing a whole flowchart hits hardest. Three wrong answers in a row and it lands a critical blow.</p>
+      <p id="onlineNote" class="small dim"></p>
+    </section>
+
+    <section id="board" class="screen">
+      <h2>Leaderboard</h2>
+      <p id="boardNote" class="small"></p>
+      <div class="board-wrap">
+        <table class="board">
+          <thead><tr><th>#</th><th>Player</th><th>Rank</th><th>XP</th><th>Accuracy</th><th>Correct</th><th>Bosses</th></tr></thead>
+          <tbody id="boardBody"></tbody>
+        </table>
+      </div>
+      <p id="boardMe" class="small"></p>
+      <div class="menu row"><button id="boardBack" class="btn primary">Back</button></div>
+      <p class="small dim">Rank tiers: Novice → Apprentice (150) → Pathfinder (400) → Navigator (800) → Architect (1500) → Master (2500) → Grandmaster (4000 XP)</p>
+    </section>
+
+    <section id="select" class="screen">
+      <h2>Choose your class</h2>
+      <p class="small">This choice is permanent for this run.</p>
+      <div id="classGrid" class="class-grid"></div>
+      <div class="menu row">
+        <button id="btnBack" class="btn">Back</button>
+        <button id="btnBegin" class="btn primary" disabled>Begin</button>
+      </div>
+    </section>
+
+    <section id="battle" class="screen">
+      <div class="stage">
+        <div class="hud">
+          <div class="bar-wrap"><span id="pName">You</span><div class="bar"><div id="pHp" class="fill accent"></div></div><span id="pHpText"></span></div>
+          <div class="bar-wrap right"><span id="bName">Boss</span><div class="bar"><div id="bHp" class="fill pale"></div></div><span id="bHpText"></span></div>
+        </div>
+        <canvas id="scene" width="320" height="150"></canvas>
+        <div class="hud lower">
+          <div id="pips" class="pips" title="Consecutive failures"></div>
+          <div id="deflectHud" class="special"></div>
+          <div id="special" class="special"></div>
+          <span id="xpHud" class="xp-hud"></span>
+          <button id="btnMusic" class="btn tiny" title="Toggle music">♪ on</button>
+          <button id="btnQuit" class="btn tiny" title="Back to the menu">Menu</button>
+        </div>
+        <div id="log" class="log"></div>
+      </div>
+
+      <div id="panel" class="panel">
+        <div id="turnMenu" class="turn-menu" hidden>
+          <h3>Your turn — read the question below</h3>
+          <div class="menu row">
+            <button id="btnAttack" class="btn primary big">Attack <small id="attackInfo">answer it (starts the timer)</small></button>
+            <button id="btnBlock" class="btn big">Block <small id="blockInfo">skip it and take only 25% of the boss's damage</small></button>
+          </div>
+          <div class="items-head">Potions <small>(one per turn — does not use your turn)</small></div>
+          <div id="itemList" class="item-list"></div>
+          <div id="buffs" class="buffs"></div>
+        </div>
+        <div id="qArea" class="q-area">
+          <div id="deflectBanner" class="deflect" hidden></div>
+          <div class="q-meta"><span id="qTopic" class="chip"></span><span id="qType" class="chip dim"></span><span id="timerText" class="timer-text"></span></div>
+          <div class="timer"><div id="timerBar"></div></div>
+          <div id="qPrompt" class="q-prompt"></div>
+          <div id="qShape" class="q-shape"></div>
+          <div id="qChart" class="fc-wrap" hidden></div>
+          <div id="qOptions" class="options"></div>
+          <div id="qExamples" class="examples"></div>
+          <textarea id="qAnswer" class="editor" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+          <div id="qEditor" class="fc-editor" hidden></div>
+          <div id="feedback" class="feedback" hidden></div>
+          <div id="hint" class="hint" hidden></div>
+          <div id="qModel" class="model" hidden></div>
+          <div class="actions">
+            <button id="btnHint" class="btn">Hint</button>
+            <button id="btnRun" class="btn">Test examples</button>
+            <button id="btnSubmit" class="btn primary">Submit <kbd>Ctrl+Enter</kbd></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="result" class="screen">
+      <h2 id="resTitle"></h2>
+      <p id="resText"></p>
+      <div id="resTier" class="tierbox card"></div>
+      <div id="resStats" class="stats"></div>
+      <div class="menu"><button id="resBtn" class="btn primary"></button><button id="resMenu" class="btn">Main menu</button></div>
+    </section>
+
+    <div id="modal" class="modal" hidden>
+      <div class="modal-box"><p id="modalText"></p><div class="menu row"><button id="modalNo" class="btn">Cancel</button><button id="modalYes" class="btn primary">Confirm</button></div></div>
+    </div>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/core/util.js"></script>
+  <script src="js/flow/expr.js"></script>
+  <script src="js/flow/layout.js"></script>
+  <script src="js/flow/render.js"></script>
+  <script src="js/flow/runner.js"></script>
+  <script src="js/flow/editor.js"></script>
+  <script src="js/data/questions.js"></script>
+  <script src="js/data/classes.js"></script>
+  <script src="js/game/profile.js"></script>
+  <script src="js/game/music.js"></script>
+  <script src="js/game/scene.js"></script>
+  <script src="js/game/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+tools/shots/
+tools/.edge-profile/
+tools/.edge-probe/
+node_modules/
+.DS_Store
+Thumbs.db
